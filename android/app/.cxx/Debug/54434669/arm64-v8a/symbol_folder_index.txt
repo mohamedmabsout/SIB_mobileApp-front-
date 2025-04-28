@@ -1,0 +1,1 @@
+C:\Users\user\AndroidStudioProjects\sib_expense_app\build\app\intermediates\cxx\Debug\54434669\obj\arm64-v8a
