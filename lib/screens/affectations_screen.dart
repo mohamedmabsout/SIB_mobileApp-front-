@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sib_expense_app/screens/expense_claim_screen.dart';
-import 'package:sib_expense_app/config/dio_client.dart'; // Import the helper
+import 'package:sib_expense_app/config/dio_client.dart';
+
+import 'expense_claim_detail_screen.dart'; // Import the helper
 
 class AffectationsScreen extends StatefulWidget {
   final String token;
@@ -468,7 +470,18 @@ class _AffectationsScreenState extends State<AffectationsScreen> {
                     final bool canTakeAction = (_userRole == 'ADMIN' || _userRole == 'MANAGER') &&
                         (status == 'PENDING' || status == 'SUBMITTED'); // **MODIFY:** Adjust valid statuses
 
-                    return Card(
+                    return GestureDetector(
+                        onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ExpenseClaimDetailScreen(token: widget.token,
+                            claimId: claimId // Passez le claim entier ou un ID
+                          ),
+                        ),
+                      );
+                    },
+                    child:Card(
                       margin: const EdgeInsets.symmetric(vertical: 6.0),
                       elevation: 2, // Add subtle elevation
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -552,7 +565,7 @@ class _AffectationsScreenState extends State<AffectationsScreen> {
                           ],
                         ),
                       ),
-                    );
+                    ));
                   },
                 ),
               ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sib_expense_app/models/dashboard_data_dto.dart';
+import 'package:sib_expense_app/screens/client_list_screen.dart';
 import 'package:sib_expense_app/screens/edit_profile_screen.dart';
 import 'package:sib_expense_app/screens/login_screen.dart';
 import 'package:sib_expense_app/screens/leave_request_list_screen.dart'; // List view
@@ -12,8 +13,13 @@ import 'package:sib_expense_app/screens/affectations_screen.dart';      // Claim
 import 'package:sib_expense_app/screens/expense_claim_screen.dart';   // Claim form view
 import 'package:sib_expense_app/screens/employees_screen.dart';        // User list / profile view
 import 'package:sib_expense_app/screens/add_employee_screen.dart';
-
-import '../components/dashboard_card.dart';     // Add Employee form
+import 'package:sib_expense_app/screens/project_list_screen.dart';
+import 'package:sib_expense_app/screens/record_stock_movement_screen.dart';
+import 'package:sib_expense_app/screens/task_list_screen.dart';
+import 'package:sib_expense_app/screens/equipment_list_screen.dart';
+import '../components/dashboard_card.dart';
+import 'alerts_screen.dart';
+import 'assignment_list_screen.dart';
 
 class DynamicDashboardScreen extends StatefulWidget {
 final String token;
@@ -24,7 +30,6 @@ const DynamicDashboardScreen({Key? key, required this.token}) : super(key: key);
 State<DynamicDashboardScreen> createState() => _DynamicDashboardScreenState();
 }
 class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
-  // ... (Keep existing state variables: _dashboardData, _isLoading, _errorMessage, _userRole, _dio) ...
   DashboardDataDto? _dashboardData;
   bool _isLoading = true;
   String? _errorMessage;
@@ -50,7 +55,7 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
         _isLoading = false;
         _errorMessage = "Role not found. Please login again.";
       });
-      _logout(); // Force logout if role is missing
+      _logout();
       return;
     }
     setState(() { _userRole = storedRole; });
@@ -108,7 +113,6 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
     setState(() { _errorMessage = errorMsg; });
     print('Error $action: $e');
   }
-  // --- End Error Handling ---
   String _formatDioException(DioException e) {
     String errorMsg;
     if (e.response != null && e.response?.data is Map) {
@@ -144,6 +148,7 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
     }
     return errorMsg;
   }
+  // --- End Error Handling ---
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
@@ -183,13 +188,10 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween, // Space content vertically
               crossAxisAlignment: CrossAxisAlignment.start, // Align text left
               children: [
-                // Top Row: Icon
                 Align(
                   alignment: Alignment.topRight,
                   child: Icon(icon, size: 32, color: Colors.white.withOpacity(0.8)),
                 ),
-
-                // Bottom Area: Value and Title
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -228,11 +230,7 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
     );
   }
 
-  // --- Reusable Alerts Section Widget ---
-  Widget _buildAlertsSection(List<AlertDto> alerts) {
-    if (alerts.isEmpty) return const SizedBox.shrink();
-    return Card( /* ... keep existing implementation ... */);
-  }
+
   IconData _getAlertIcon(String priority) {
     switch (priority.toUpperCase()) {
       case 'HIGH': return Icons.error_outline;
@@ -242,17 +240,66 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
     }
   }
 
-  Color _getAlertColor(String priority) {
-    switch (priority.toUpperCase()) {
-      case 'HIGH': return Colors.red;
-      case 'MEDIUM': return Colors.orange;
-      case 'INFO': return Colors.blue;
-      default: return Colors.blue; // Explicit return for default
-    }
+
+
+  Widget _buildAlertsSection(List<AlertDto> alerts) {
+    if (alerts.isEmpty) return const SizedBox.shrink(); // Don't show if no alerts
+
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      margin: const EdgeInsets.only(top: 16.0, bottom: 8.0), // Add some margin
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                "Important Alerts",
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: _getAlertColor("HIGH") // Use a prominent color
+                )
+            ),
+            const Divider(height: 16, thickness: 1),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: alerts.length,
+              itemBuilder: (context, index) {
+                final alert = alerts[index];
+                return ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(_getAlertIcon(alert.priority), color: _getAlertColor(alert.priority), size: 28),
+                  title: Text(alert.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text(alert.description),
+                  onTap: () {
+                    print("Tapped on alert: ${alert.title}");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Action for '${alert.title}' not yet implemented."))
+                    );
+                  },
+                );
+              },
+              separatorBuilder: (context, index) => const Divider(height: 10),
+            )
+          ],
+        ),
+      ),
+    );
   }
 
-  // --- ** FULLY IMPLEMENTED ** Build the main dashboard grid ---
-  // --- ** UPDATED ** Build the main dashboard grid for Admin ---
+
+
+  Color _getAlertColor(String priority) {
+    switch (priority.toUpperCase()) {
+      case 'HIGH': return Colors.red.shade700;
+      case 'MEDIUM': return Colors.orange.shade800;
+      case 'WARNING': return Colors.orange.shade800;
+      case 'INFO':
+      default: return Colors.blue.shade700;
+    }
+  }
   List<Widget> _buildDashboardGrid(BuildContext context, DashboardDataDto data) {
     List<Widget> cards = [];
     final String currentToken = widget.token;
@@ -263,9 +310,11 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
     const Color orangeStart = Color(0xFFFDC830); const Color orangeEnd = Color(0xFFF37335);
     const Color redStart = Color(0xFFEB5757); const Color redEnd = Color(0xFFB82E1F);
     const Color blueStart = Color(0xFF3A7BD5); const Color blueEnd = Color(0xFF00D2FF);
+    const Color greenStart = Color(0xFF6DD5FA); const Color greenEnd = Color(0xFF23A6D5); // Added for tasks
+    const Color greyStart = Color(0xFFBDBDBD); const Color greyEnd = Color(0xFF616161); // Added for setting
+    String activeAssignmentsValue = _isLoading ? "..." : (_dashboardData?.teamAssignments?['ACTIVE']?.toString() ?? "0");
 
-
-    // --- ADMIN Specific Cards (Using New DashboardCard) ---
+    // --- ADMIN Specific Cards ---
     if (_userRole == 'ADMIN') {
       cards.add(DashboardCard(
         title: 'Gestion Utilisateurs',
@@ -279,13 +328,13 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
         value: data.totalActiveProjects?.toString() ?? '0',
         icon: Icons.assessment_outlined,
         startColor: tealStart, endColor: tealEnd,
-        onTap: () { /* TODO: Navigate to ProjectListScreen */ ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Projects list screen not yet implemented.'))); },
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ProjectListScreen(token: currentToken))),
       ));
       cards.add(DashboardCard(
         title: 'Total Notes Frais (Attente)',
         value: data.pendingExpenseClaims?.toString() ?? '0',
         icon: Icons.hourglass_bottom_outlined,
-        startColor: orangeStart, endColor: orangeEnd,
+        startColor: greenStart, endColor: greenEnd, // Green gradient
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AffectationsScreen(token: currentToken))),
       ));
       cards.add(DashboardCard(
@@ -302,13 +351,37 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
         startColor: blueStart, endColor: blueEnd,
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AddEmployeeScreen(token: currentToken))),
       ));
-      // Add more Admin-specific cards if needed (e.g., Settings, Audit Logs)
       cards.add(DashboardCard(
-        title: 'Paramètres', // Example settings card
-        value: "Config",
-        icon: Icons.settings_outlined,
-        startColor: Colors.grey.shade400, endColor: Colors.grey.shade700,
-        onTap: () { /* TODO: Navigate to Settings */ },
+        title: 'Mes Tâches', // My Tasks
+        value: data.myOpenTasks?.toString() ?? "Voir", // Show open task count for user if available
+        icon: Icons.list_alt_rounded, // Icon for tasks
+        startColor: orangeStart, endColor: orangeEnd,
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => TaskListScreen(token: currentToken))),
+      ));cards.add(DashboardCard(
+        title: 'Affectations Équipe (Actives)',
+        value: activeAssignmentsValue,
+        icon: Icons.assignment_ind_outlined, // Changed Icon
+        startColor: tealStart, endColor: tealEnd,
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AssignmentListScreen(token: widget.token))), // Navigate to Assignment list
+      ),);cards.add( DashboardCard(
+        title: 'Gérer Inventaire',
+        value: "Voir", // Fetch total count?
+        icon: Icons.inventory_2_outlined,
+        startColor: Colors.brown.shade300, endColor: Colors.brown.shade700,
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => EquipmentListScreen(token: widget.token))),
+      ));
+      cards.add(  DashboardCard(
+      title: 'Mouvement Stock',
+        value: "+/-",
+        icon: Icons.compare_arrows_outlined,
+        startColor: Colors.blueGrey.shade300, endColor: Colors.blueGrey.shade700,
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RecordStockMovementScreen(token: widget.token))),
+      ));cards.add(  DashboardCard(
+      title: 'Clients',
+        value: "Voir",
+        icon: Icons.add_call,
+        startColor: Colors.blueGrey.shade300, endColor: Colors.cyan.shade800,
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ClientListScreen(token: widget.token))),
       ));
     } else {
       // This part shouldn't be reached if navigation logic is correct,
@@ -322,49 +395,24 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
   // --- Main Build Method ---
   @override
   Widget build(BuildContext context) {
-    // ... (Keep the existing Scaffold structure, AppBar, Background, SafeArea) ...
     return Scaffold(
       appBar: AppBar(
         title: Text('$_userRole Dashboard'), // Dynamic title
         backgroundColor: Colors.blue[700],
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: 'Manage Users', // Add tooltips
+            icon: const Icon(Icons.notifications_outlined), // Standard notifications icon
+            tooltip: 'View Alerts',
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => EmployeesScreen(token: widget.token),
+                  builder: (context) => AlertsScreen(token: widget.token), // Pass the token
                 ),
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.swap_horiz),
-            tooltip: 'View Assignments/Claims', // Adjust tooltip
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  // Assuming AffectationsScreen now shows Expense Claims or Assignments
-                  builder: (context) => AffectationsScreen(token: widget.token),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.time_to_leave), // Or Icons.time_to_leave
-            tooltip: 'Request Leave',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LeaveRequestListScreen(token: widget.token), // Pass the token
-                ),
-              );
-            },
-          ),
+
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
             tooltip: 'My Profile',
@@ -416,7 +464,6 @@ class _DynamicDashboardScreenState extends State<DynamicDashboardScreen> {
                     // if (_dashboardData!.alerts != null && _dashboardData!.alerts!.isNotEmpty) // Check if alerts list is not null and not empty
                     //    _buildAlertsSection(_dashboardData!.alerts!),
 
-                    // Add other sections like charts or recent activity here
                   ],
                 ),
               ),

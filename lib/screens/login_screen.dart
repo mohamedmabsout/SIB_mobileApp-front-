@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
-
+  bool _obscurePassword = true;
   final Dio _dio = createDioClient(); // Get the configured Dio instance
 
 
@@ -236,16 +236,27 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 16.0),
                         TextFormField(
                           controller: _passwordController,
-                          obscureText: true,
-                          decoration: const InputDecoration(
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
                             labelText: 'Password',
                             border: OutlineInputBorder(),
                             filled: true,
                             fillColor: Colors.white70,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
                           ),
                           validator: (value) =>
                           value == null || value.isEmpty ? 'Please enter your password' : null,
                         ),
+
                         const SizedBox(height: 24.0),
                         if (_errorMessage != null)
                           Padding(

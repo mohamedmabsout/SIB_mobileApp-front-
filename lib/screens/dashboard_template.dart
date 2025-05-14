@@ -4,11 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sib_expense_app/screens/edit_profile_screen.dart';
 import 'package:sib_expense_app/screens/login_screen.dart';
 
-class DashboardTemplate extends StatelessWidget { // Can likely be StatelessWidget now
+import 'alerts_screen.dart';
+
+class DashboardTemplate extends StatelessWidget {
   final String title;
   final String token;
-  final List<Widget> kpiCards; // Renamed for clarity
-  final Future<void> Function() onRefresh; // Callback for refresh
+  final List<Widget> kpiCards; // List of KPI cards to display
+  final Future<void> Function() onRefresh;
+  // Optional: Add a slot for alerts if you want the template to handle its placement
+  // final Widget? alertsSection;
 
   const DashboardTemplate({
     Key? key,
@@ -16,14 +20,14 @@ class DashboardTemplate extends StatelessWidget { // Can likely be StatelessWidg
     required this.token,
     required this.kpiCards,
     required this.onRefresh,
+    // this.alertsSection,
   }) : super(key: key);
 
-  // Logout function remains useful
   Future<void> _logout(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    // Check context validity before navigating
-    if (Navigator.of(context).canPop()) {
+    // Ensure context is still valid for navigation
+    if (Navigator.of(context).mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
             (Route<dynamic> route) => false,
@@ -35,14 +39,26 @@ class DashboardTemplate extends StatelessWidget { // Can likely be StatelessWidg
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final Color appBarColor = theme.appBarTheme.backgroundColor ?? theme.colorScheme.primary;
-    final Color scaffoldBgColor = theme.scaffoldBackgroundColor;
+    // Background color is handled by the Stack with Image now
 
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
         backgroundColor: appBarColor,
-        elevation: 1, // Subtle elevation
+        elevation: 1,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined), // Standard notifications icon
+            tooltip: 'View Alerts',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AlertsScreen(token: token), // Pass the token
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
             tooltip: 'My Profile',
@@ -52,36 +68,50 @@ class DashboardTemplate extends StatelessWidget { // Can likely be StatelessWidg
                 MaterialPageRoute(
                   builder: (context) => EditProfileScreen(token: token),
                 ),
-              ).then((_) => onRefresh()); // Refresh after profile edit
+              ).then((_) => onRefresh());
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () => _logout(context),
-          ),
-          // Removed PopupMenuButton
+
         ],
       ),
-      backgroundColor: scaffoldBgColor,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: onRefresh, // Use the passed refresh function
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 16.0,
-              mainAxisSpacing: 16.0,
-              childAspectRatio: 1.0, // Adjust ratio for new card design (try 1.0 or 0.95)
-              children: kpiCards, // Display the cards provided by the specific dashboard
+      body: Stack( // Use Stack for background image
+        children: [
+          Image.asset(
+            'assets/dashboard_background2.jpg', // Your desired background
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+          SafeArea(
+            child: RefreshIndicator(
+              onRefresh: onRefresh,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column( // Column to hold alerts then grid
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Optional slot for alerts - specific dashboard will build it
+                    // if (alertsSection != null) alertsSection!,
+                    // if (alertsSection != null) const SizedBox(height: 16),
+
+                    // Grid for KPI Cards
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 16.0,
+                      mainAxisSpacing: 16.0,
+                      childAspectRatio: 1.0, // Adjust as needed for your cards
+                      children: kpiCards,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
-      // Removed FloatingActionButton
+      // FAB removed from template - add to specific dashboards if needed
     );
   }
 }

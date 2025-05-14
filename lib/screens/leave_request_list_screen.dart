@@ -3,7 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import 'package:sib_expense_app/screens/leave_request_screen.dart'; // Screen to create new request
-import 'package:sib_expense_app/config/dio_client.dart'; // Import the helper
+import 'package:sib_expense_app/config/dio_client.dart';
+
+import 'leave_request_details_screen.dart'; // Import the helper
 
 // Ensure this enum definition is accessible, either here or in a models file
 // Match these values EXACTLY (case-sensitive) with your backend enum names
@@ -359,7 +361,17 @@ class _LeaveRequestListScreenState extends State<LeaveRequestListScreen> {
                     final bool isPending = (status.toUpperCase() == 'PENDING' || status.toUpperCase() == 'SUBMITTED');
                     final bool canEmployeeDelete = (_userRole == 'EMPLOYEE' && isPending);
 
-                    return Card(
+                    return GestureDetector(
+                        onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => LeaveRequestDetailsScreen( leaveRequest: request // Passez le claim entier ou un ID
+                          ),
+                        ),
+                      );
+                    },
+                    child:Card(
                       margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 8.0),
                       elevation: 3,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -434,7 +446,7 @@ class _LeaveRequestListScreenState extends State<LeaveRequestListScreen> {
                           ],
                         ),
                       ),
-                    );
+                    ));
                   },
                 ),
               ),
